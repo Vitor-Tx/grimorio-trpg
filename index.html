@@ -5673,48 +5673,66 @@
 
 
     <script>
-        // Mantém o listener de evento 'change' para todos os selects de filtro
-        $("body").on("change", ".jetsSearch", function () {
-            // 1. Inicia uma string de seletor vazia
+        // Função central que aplica TODOS os filtros (texto e dropdowns)
+        function aplicarFiltros() {
+            // 1. Pega o texto da busca, converte para minúsculas e remove espaços
+            const textoBusca = $('#jetsSearch').val().toLowerCase().trim();
+
+            // 2. Monta o seletor de classes a partir dos dropdowns
             let seletorFiltro = '';
-            // 2. Itera sobre cada dropdown no painel de filtros
             $('.quadradoEsquerdo select').each(function() {
-                // Pega o valor selecionado
                 const valor = $(this).val();
-                // Se o valor não for 'Todas', adiciona a classe ao seletor (sem vírgula!)
                 if (valor !== 'Todas') {
                     seletorFiltro += '.' + valor;
                 }
             });
-            // 3. Esconde todos os cabeçalhos de nível e links 'Volta ao topo'
-            $('.post-list-head, .post-meta').hide();
-            // 4. Verifica se algum filtro foi aplicado
+
+            // 3. Pega todas as magias como ponto de partida
+            let magiasParaMostrar = $(".spell-item");
+
+            // 4. Se houver filtros de dropdown, filtra a lista de magias
             if (seletorFiltro !== "") {
-                // Esconde TODAS as magias primeiro
-                $(".spell-item").hide();
-                // Mostra apenas as magias que correspondem a TODAS as classes do seletor
-                $(".spell-item" + seletorFiltro).show();
-                // Lógica para mostrar o cabeçalho do nível correto
-                const nivelSelecionado = $('#nivel').val();
-                if (nivelSelecionado !== 'Todas') {
-                    // Mostra apenas o cabeçalho e o link do nível selecionado
-                    $('.post-list-head.' + nivelSelecionado).show();
-                    $('.post-meta.' + nivelSelecionado).show();
-                } else {
-                    // Se o nível não foi especificado, mostra o cabeçalho de qualquer nível que tenha magias visíveis
-                    $('.post-list').each(function() {
-                        if ($(this).find('.spell-item:visible').length > 0) {
-                            $(this).prev('.post-list-head').show();
-                            $(this).next('.post-meta').show();
-                        }
-                    });
-                }
-            } else {
-                // Se nenhum filtro estiver ativo, mostra tudo de volta
-                $(".spell-item").show();
-                $('.post-list-head, .post-meta').show();
+                magiasParaMostrar = magiasParaMostrar.filter(seletorFiltro);
             }
+
+            // 5. Se houver texto na busca, filtra a lista que SOBROU do passo anterior
+            if (textoBusca !== "") {
+                magiasParaMostrar = magiasParaMostrar.filter(function() {
+                    // Verifica se o texto da magia (em minúsculas) contém o texto da busca
+                    return $(this).text().toLowerCase().includes(textoBusca);
+                });
+            }
+            
+            // --- Lógica de Exibição ---
+
+            // Esconde tudo primeiro (magias e títulos)
+            $(".spell-item, .post-list-head, .post-meta").hide();
+
+            // Mostra apenas as magias que passaram por todos os filtros
+            magiasParaMostrar.show();
+
+            // Mostra os títulos de nível corretos (apenas os que têm magias visíveis)
+            $('.post-list').each(function() {
+                if ($(this).find('.spell-item:visible').length > 0) {
+                    $(this).prev('.post-list-head').show();
+                    $(this).next('.post-meta').show();
+                }
+            });
+        }
+
+        // --- Eventos que chamam a função de filtro ---
+
+        // Roda a função quando o usuário digita no campo de busca
+        $("#jetsSearch").on("keyup", function() {
+            aplicarFiltros();
         });
+
+        // Roda a função quando o usuário muda a seleção de um dropdown
+        // Usamos um seletor mais específico para não incluir o campo de busca
+        $(".quadradoEsquerdo select").on("change", function() {
+            aplicarFiltros();
+        });
+
     </script>
     <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
         crossorigin="anonymous"></script>
